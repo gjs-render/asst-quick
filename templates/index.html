@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Tutor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to the Math Tutor!</h1>
@@ -22,7 +40,7 @@
             const questionInput = document.getElementById('question').value;
 
             try {
-                const response = await fetch('{{ url_for("solve") }}', {
+                const response = await fetch('/solve', { // Ensure the URL matches your Flask route
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json' // Set the content type to JSON
