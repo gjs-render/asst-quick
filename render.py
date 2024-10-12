@@ -3,7 +3,7 @@ from openai import OpenAI, OpenAIError
 import os
 from dotenv import load_dotenv
 import logging
-import time
+import time  # Import time for sleep functionality
 
 # Load environment variables
 load_dotenv()
@@ -74,18 +74,12 @@ def solve():
         # Retrieve and return the latest message from the assistant
         messages = client.beta.threads.messages.list(thread_id=thread.id)
 
-        # Ensure we are accessing the correct content
+        # Check if we have messages
         if messages.data:
             last_message = messages.data[-1]  # Get the last message object
-            if hasattr(last_message, 'content'):
-                response = last_message.content  # This should be a string
-                logging.info(f"Assistant response: {response}")
-                return jsonify({"response": response, "status": "success"})
-            else:
-                logging.error("Last message does not have 'content'.")
-                return jsonify({"response": "No valid content in response.", "status": "error"})
+            response = last_message.content if hasattr(last_message, 'content') else "No valid content in response."
+            return jsonify({"response": response, "status": "success"})
         else:
-            logging.warning("No messages found from the assistant.")
             return jsonify({"response": "No response from assistant.", "status": "success"})
 
     except OpenAIError as e:
@@ -94,3 +88,6 @@ def solve():
     except Exception as e:
         logging.error(f"Unexpected Error: {e}")
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))  # Use PORT from environment variables
