@@ -19,7 +19,7 @@ client = OpenAI(api_key=api_key)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Create assistant only once for efficiency
+# Create assistant once for efficiency
 assistant = client.beta.assistants.create(
     name="Math Tutor",
     instructions="You are a personal math tutor. Write and run code to answer math questions.",
@@ -31,19 +31,26 @@ assistant = client.beta.assistants.create(
 @app.route('/solve', methods=['POST'])
 def solve_equation():
     try:
-        # Get the user question from the request JSON
-        user_question = request.json.get("question", "")
+        # Ensure that the request contains JSON and a 'question'
+        if not request.json or 'question' not in request.json:
+            return jsonify({"status": "error", "message": "No question provided."}), 400
+        
+        # Get the user's math question from the request
+        user_question = request.json['question']
+        
+        # Log the user question
+        logging.info(f"Received question: {user_question}")
         
         # Create a thread for the conversation
         thread = client.beta.threads.create()
         
-        # Send the user's math question to the assistant
+        # Send the user's question to the assistant
         message = client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=user_question
         )
-
+        
         # Run the assistant with the instructions
         run = client.beta.threads.runs.create_and_poll(
             thread_id=thread.id,
@@ -51,10 +58,11 @@ def solve_equation():
             instructions="Please address the user as Jane Doe. The user has a premium account."
         )
         
-        # Check the run status and return the messages if completed
+        # Check the run status and return messages if the task is completed
         if run.status == 'completed': 
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            return jsonify({"status": "success", "messages": messages}), 200
+            # Return the assistant's messages as a response
+            return jsonify({"status": "success", "messages": [msg.content for msg in messages]}), 200
         else:
             return jsonify({"status": "pending", "run_status": run.status}), 202
     
