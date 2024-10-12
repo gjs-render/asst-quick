@@ -72,6 +72,7 @@ def solve():
 
             # If there are no messages, return a helpful message
             if not response_content:
+                logging.warning("No messages received from the assistant.")
                 return jsonify({"status": "success", "messages": ["No response from assistant."]}), 200
             
             return jsonify({"status": "success", "messages": response_content}), 200
