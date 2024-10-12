@@ -37,12 +37,9 @@ def home():
 def solve():
     """Handle the POST request to solve a math question."""
     try:
-        logging.info("Received request to /solve")
         data = request.json
-        logging.info(f"Request data: {data}")
 
         if not data or 'question' not in data:
-            logging.warning("No question provided in the request.")
             return jsonify({"status": "error", "message": "No question provided."}), 400
 
         question = data['question']
@@ -51,6 +48,7 @@ def solve():
         # Create a thread for the assistant
         thread = client.beta.threads.create()
 
+        # Send the user's message to the assistant
         client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
@@ -63,6 +61,7 @@ def solve():
             assistant_id=assistant.id
         )
 
+        # Poll the run status
         while True:
             run_status = client.beta.threads.runs.retrieve(
                 thread_id=thread.id, run_id=run.id
@@ -70,14 +69,21 @@ def solve():
             logging.info(f"Run status: {run_status.status}")
             if run_status.status == "completed":
                 break
-            time.sleep(1)
+            time.sleep(1)  # Wait for a second before checking again
 
+        # Retrieve and return the latest message from the assistant
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        
+
+        # Ensure we are accessing the correct content
         if messages.data:
-            response = messages.data[-1].content
-            logging.info(f"Assistant response: {response}")
-            return jsonify({"response": response, "status": "success"})
+            last_message = messages.data[-1]  # Get the last message object
+            if hasattr(last_message, 'content'):
+                response = last_message.content  # This should be a string
+                logging.info(f"Assistant response: {response}")
+                return jsonify({"response": response, "status": "success"})
+            else:
+                logging.error("Last message does not have 'content'.")
+                return jsonify({"response": "No valid content in response.", "status": "error"})
         else:
             logging.warning("No messages found from the assistant.")
             return jsonify({"response": "No response from assistant.", "status": "success"})
@@ -88,6 +94,3 @@ def solve():
     except Exception as e:
         logging.error(f"Unexpected Error: {e}")
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
