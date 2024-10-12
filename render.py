@@ -57,35 +57,28 @@ def solve():
             content=question
         )
 
-        # Run the assistant
-        run = client.beta.threads.runs.create_and_poll(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            instructions="Please address the user as Jane Doe. The user has a premium account."
+        # Run the Assistant
+    run = client.beta.threads.runs.create(
+        thread_id=thread_id, assistant_id=assistant_id
+    )
+
+    # Check if the Run requires action (function call)
+    while True:
+        run_status = client.beta.threads.runs.retrieve(
+            thread_id=thread_id, run_id=run.id
         )
+        print(f"Run status: {run_status.status}")
+        if run_status.status == "completed":
+            break
+        sleep(1)  # Wait for a second before checking again
 
-        # Check the run status
-        if run.status == 'completed':
-            messages = client.beta.threads.messages.list(thread_id=thread.id)
-            response_content = [msg['content'] for msg in messages if 'content' in msg]
-            logging.info(f"Messages from assistant: {response_content}")
+    # Retrieve and return the latest message from the assistant
+    messages = client.beta.threads.messages.list(thread_id=thread_id)
+    response = messages.data[0].content[0].text.value
 
-            # If there are no messages, return a helpful message
-            if not response_content:
-                logging.warning("No messages received from the assistant.")
-                return jsonify({"status": "success", "messages": ["No response from assistant."]}), 200
-            
-            return jsonify({"status": "success", "messages": response_content}), 200
-        else:
-            logging.warning(f"Run status: {run.status}")
-            return jsonify({"status": "failure", "messages": ["Assistant did not complete the request."]}), 400
+    print(f"Assistant response: {response}")
+    return jsonify({"response": response})
 
-    except OpenAIError as e:
-        logging.error(f"OpenAI error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
