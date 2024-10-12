@@ -39,7 +39,7 @@ def solve():
     try:
         # Log the incoming request
         logging.info("Received request to /solve")
-        data = request.json
+        data = request.json  # Expect JSON data in the request
         logging.info(f"Request data: {data}")
 
         # Check if the question is provided
