@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Web App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='/static/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to the Flask Web App</h1>
+        <form id="chat-form" action="{{ url_for('chat') }}" method="post">
+            <div class="form-group">
+                <label for="user_input">Your Input:</label>
+                <input type="text" id="user_input" name="user_input" aria-label="User input" required>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="chat-history">
+            <!-- Chat history or results can be displayed here -->
+        </div>
+    </div>
+</body>
+</html>
