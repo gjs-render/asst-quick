@@ -19,13 +19,14 @@ client = OpenAI(api_key=api_key)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Create the assistant
+# Create the assistant once when the app starts
 assistant = client.beta.assistants.create(
     name="Math Tutor",
-    instructions="You are a personal math tutor. Write and run code to answer math questions.",
+    instructions="You are a personal math tutor. Your job is to solve mathematical equations and explain the solutions.",
     tools=[{"type": "code_interpreter"}],
     model="gpt-4o",
 )
+
 
 @app.route('/')
 def index():
@@ -63,10 +64,12 @@ def solve_equation():
         )
         
         # If run completed, get the messages
-        if run.status == 'completed':
-            messages = client.beta.threads.messages.list(thread_id=thread.id)
-            response_content = [msg['content'] for msg in messages if 'content' in msg]
-            return jsonify({"status": "success", "messages": response_content}), 200
+if run.status == 'completed':
+    messages = client.beta.threads.messages.list(thread_id=thread.id)
+    logging.info(f"Messages from assistant: {messages}")  # Log the raw messages
+    response_content = [msg['content'] for msg in messages if 'content' in msg]
+    return jsonify({"status": "success", "messages": response_content}), 200
+
         else:
             return jsonify({"status": "pending", "run_status": run.status}), 202
     
