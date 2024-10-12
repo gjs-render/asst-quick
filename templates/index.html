@@ -4,10 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Tutor</title>
+    <script>
+        async function submitQuestion(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            const questionInput = document.getElementById('question');
+            const question = questionInput.value;
+
+            try {
+                const response = await fetch("{{ url_for('solve') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json" // Set the content type to JSON
+                    },
+                    body: JSON.stringify({ question }) // Send the question as JSON
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                alert(result.response); // Display the response from the server
+            } catch (error) {
+                console.error("Error:", error);
+                alert("There was an error submitting your question.");
+            }
+        }
+    </script>
 </head>
 <body>
     <h1>Welcome to the Math Tutor!</h1>
-    <form action="{{ url_for('solve') }}" method="POST">
+    <form onsubmit="submitQuestion(event)">
         <label for="question">Enter your math question:</label>
         <input type="text" id="question" name="question" required>
         <button type="submit">Solve</button>
