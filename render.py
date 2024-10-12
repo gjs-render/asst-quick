@@ -7,7 +7,7 @@ import logging
 # Load environment variables
 load_dotenv()
 
-# Initialize Flask app
+# Initialize the Flask app
 app = Flask(__name__)
 
 # Retrieve the OpenAI API key from environment variables
