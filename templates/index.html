@@ -34,31 +34,27 @@
     <div id="response"></div>
 
     <script>
-        document.getElementById('questionForm').addEventListener('submit', async function(event) {
-            event.preventDefault(); // Prevent the default form submission
+       class EventHandler(AssistantEventHandler):
+@override
+def on_text_created(self, text) → None:
+print(f"\nassistant > “, end=”", flush=True)
 
-            const questionInput = document.getElementById('question').value;
+@override
+def on_text_delta(self, delta, snapshot):
+    print(delta.value, end="", flush=True)
+    
+def on_tool_call_created(self, tool_call):
+    print(f"\nassistant > {tool_call.type}\n", flush=True)
 
-            try {
-                const response = await fetch('/solve', { // Ensure the URL matches your Flask route
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json' // Set the content type to JSON
-                    },
-                    body: JSON.stringify({ question: questionInput }) // Send the question as JSON
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                document.getElementById('response').innerText = data.response || 'No response from the assistant.';
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('response').innerText = 'An error occurred while sending your question.';
-            }
-        });
+def on_tool_call_delta(self, delta, snapshot):
+    if delta.type == 'code_interpreter':
+        if delta.code_interpreter.input:
+            print(delta.code_interpreter.input, end="", flush=True)
+        if delta.code_interpreter.outputs:
+            print(f"\n\noutput >", flush=True)
+            for output in delta.code_interpreter.outputs:
+                if output.type == "logs":
+                    print(f"\n{output.logs}", flush=True)
     </script>
 </body>
 </html>
