@@ -3,7 +3,7 @@ from openai import OpenAI, OpenAIError
 import os
 from dotenv import load_dotenv
 import logging
-import time  # Import time for sleep functionality
+import time
 
 # Load environment variables
 load_dotenv()
@@ -37,12 +37,10 @@ def home():
 def solve():
     """Handle the POST request to solve a math question."""
     try:
-        # Log the incoming request
         logging.info("Received request to /solve")
-        data = request.json  # Expect JSON data in the request
+        data = request.json
         logging.info(f"Request data: {data}")
 
-        # Check if the question is provided
         if not data or 'question' not in data:
             logging.warning("No question provided in the request.")
             return jsonify({"status": "error", "message": "No question provided."}), 400
@@ -53,7 +51,6 @@ def solve():
         # Create a thread for the assistant
         thread = client.beta.threads.create()
 
-        # Send the user's message to the assistant
         client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
@@ -66,7 +63,6 @@ def solve():
             assistant_id=assistant.id
         )
 
-        # Poll the run status
         while True:
             run_status = client.beta.threads.runs.retrieve(
                 thread_id=thread.id, run_id=run.id
@@ -74,14 +70,12 @@ def solve():
             logging.info(f"Run status: {run_status.status}")
             if run_status.status == "completed":
                 break
-            time.sleep(1)  # Wait for a second before checking again
+            time.sleep(1)
 
-        # Retrieve and return the latest message from the assistant
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-
-        # Ensure we are accessing the correct content
+        
         if messages.data:
-            response = messages.data[-1].content  # Get the last message content
+            response = messages.data[-1].content
             logging.info(f"Assistant response: {response}")
             return jsonify({"response": response, "status": "success"})
         else:
