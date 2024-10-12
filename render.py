@@ -1,3 +1,36 @@
+from flask import Flask, request, jsonify
+from openai import OpenAI, OpenAIError
+import os
+from dotenv import load_dotenv
+import logging
+
+# Load environment variables
+load_dotenv()
+
+# Initialize the Flask app
+app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Retrieve the OpenAI API key from environment variables
+api_key = os.getenv('OPENAI_API_KEY')
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=api_key)
+
+# Create the assistant
+assistant = client.beta.assistants.create(
+    name="Math Tutor",
+    instructions="You are a personal math tutor. Write and run code to answer math questions.",
+    tools=[{"type": "code_interpreter"}],
+    model="gpt-4o",
+)
+
+@app.route('/')
+def index():
+    return "Math Tutor Flask app is running!"
+
 @app.route('/solve', methods=['POST'])
 def solve_equation():
     try:
@@ -36,7 +69,10 @@ def solve_equation():
         if run.status == 'completed':
             messages = client.beta.threads.messages.list(thread_id=thread.id)
             logging.info("Run completed successfully.")
-            return jsonify({"status": "success", "messages": [msg.content for msg in messages]}), 200
+            
+            # Extract the text content from the messages and return as JSON
+            response_content = [msg['content'] for msg in messages if 'content' in msg]
+            return jsonify({"status": "success", "messages": response_content}), 200
         else:
             logging.warning(f"Run status: {run.status}")
             return jsonify({"status": "pending", "run_status": run.status}), 202
@@ -47,3 +83,6 @@ def solve_equation():
     except Exception as e:
         logging.error(f"Server Error: {str(e)}")
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
