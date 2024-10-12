@@ -3,6 +3,7 @@ from openai import OpenAI, OpenAIError
 import os
 from dotenv import load_dotenv
 import logging
+import time  # Import time for sleep functionality
 
 # Load environment variables
 load_dotenv()
@@ -29,7 +30,7 @@ assistant = client.beta.assistants.create(
 
 @app.route('/')
 def home():
-    return "Math Tutor Flask app is running!"
+    return render_template('index.html')
 
 @app.route('/solve', methods=['POST'])
 def solve():
@@ -57,32 +58,37 @@ def solve():
             content=question
         )
 
-        # Run the Assistant
-    run = client.beta.threads.runs.create(
-        thread_id=thread_id, assistant_id=assistant_id
-    )
-
-    # Check if the Run requires action (function call)
-    while True:
-        run_status = client.beta.threads.runs.retrieve(
-            thread_id=thread_id, run_id=run.id
+        # Run the assistant and wait for completion
+        run = client.beta.threads.runs.create(
+            thread_id=thread.id,
+            assistant_id=assistant.id
         )
-        print(f"Run status: {run_status.status}")
-        if run_status.status == "completed":
-            break
-        sleep(1)  # Wait for a second before checking again
 
-    # Retrieve and return the latest message from the assistant
-    messages = client.beta.threads.messages.list(thread_id=thread_id)
-    response = messages.data[0].content[0].text.value
+        # Poll the run status
+        while True:
+            run_status = client.beta.threads.runs.retrieve(
+                thread_id=thread.id, run_id=run.id
+            )
+            logging.info(f"Run status: {run_status.status}")
+            if run_status.status == "completed":
+                break
+            time.sleep(1)  # Wait for a second before checking again
 
-    print(f"Assistant response: {response}")
-    return jsonify({"response": response})
+        # Retrieve and return the latest message from the assistant
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
+        
+        # Ensure we are accessing the correct content
+        if messages.data:
+            response = messages.data[-1].content  # Get the last message content
+            logging.info(f"Assistant response: {response}")
+            return jsonify({"response": response, "status": "success"})
+        else:
+            logging.warning("No messages found from the assistant.")
+            return jsonify({"response": "No response from assistant.", "status": "success"})
 
-@app.route('/')
-def home():
-    return render_template('index.html')
-
+    except OpenAIError as e:
+        logging.error(f"OpenAI Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
