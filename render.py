@@ -30,10 +30,12 @@ assistant = client.beta.assistants.create(
 
 @app.route('/')
 def home():
+    """Render the home page."""
     return render_template('index.html')
 
 @app.route('/solve', methods=['POST'])
 def solve():
+    """Handle the POST request to solve a math question."""
     try:
         # Log the incoming request
         logging.info("Received request to /solve")
@@ -52,7 +54,7 @@ def solve():
         thread = client.beta.threads.create()
 
         # Send the user's message to the assistant
-        message = client.beta.threads.messages.create(
+        client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=question
@@ -76,7 +78,7 @@ def solve():
 
         # Retrieve and return the latest message from the assistant
         messages = client.beta.threads.messages.list(thread_id=thread.id)
-        
+
         # Ensure we are accessing the correct content
         if messages.data:
             response = messages.data[-1].content  # Get the last message content
@@ -89,6 +91,9 @@ def solve():
     except OpenAIError as e:
         logging.error(f"OpenAI Error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as e:
+        logging.error(f"Unexpected Error: {e}")
+        return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
