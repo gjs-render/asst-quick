@@ -34,8 +34,17 @@ def home():
 @app.route('/solve', methods=['POST'])
 def solve():
     try:
+        # Log the incoming request
+        logging.info("Received request to /solve")
         data = request.json
-        question = data.get('question', '')
+        logging.info(f"Request data: {data}")
+
+        # Check if the question is provided
+        if not data or 'question' not in data:
+            logging.warning("No question provided in the request.")
+            return jsonify({"status": "error", "message": "No question provided."}), 400
+
+        question = data['question']
         logging.info(f"Received question: {question}")
 
         # Create a thread for the assistant
