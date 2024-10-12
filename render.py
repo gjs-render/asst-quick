@@ -7,9 +7,6 @@ import logging
 # Load environment variables
 load_dotenv()
 
-# Initialize the Flask app
-app = Flask(__name__)
-
 # Retrieve the OpenAI API key from environment variables
 api_key = os.getenv('OPENAI_API_KEY')
 
@@ -19,6 +16,9 @@ client = OpenAI(api_key=api_key)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+# Create a Flask application
+app = Flask(__name__)
+
 # Create the assistant once when the app starts
 assistant = client.beta.assistants.create(
     name="Math Tutor",
@@ -27,60 +27,49 @@ assistant = client.beta.assistants.create(
     model="gpt-4o",
 )
 
-
 @app.route('/')
-def index():
+def home():
     return "Math Tutor Flask app is running!"
 
 @app.route('/solve', methods=['POST'])
-def solve_equation():
+def solve():
     try:
-        logging.info("POST /solve route accessed.")  # Debugging log
-        
-        # Ensure the request contains JSON and a 'question'
-        if not request.json or 'question' not in request.json:
-            logging.warning("No question provided in the request.")
-            return jsonify({"status": "error", "message": "No question provided."}), 400
-        
-        # Log the incoming question
-        logging.info(f"Received question: {request.json['question']}")
-        
-        # Get the question from the request
-        user_question = request.json['question']
-        
-        # Create a new thread and post a message
+        data = request.json
+        question = data.get('question', '')
+
+        # Create a thread for the assistant
         thread = client.beta.threads.create()
+
+        # Send the user's message to the assistant
         message = client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
-            content=user_question
+            content=question
         )
-        
+
         # Run the assistant
         run = client.beta.threads.runs.create_and_poll(
             thread_id=thread.id,
             assistant_id=assistant.id,
             instructions="Please address the user as Jane Doe. The user has a premium account."
         )
-        
-        # If run completed, get the messages
-if run.status == 'completed':
-    messages = client.beta.threads.messages.list(thread_id=thread.id)
-    logging.info(f"Messages from assistant: {messages}")  # Log the raw messages
-    response_content = [msg['content'] for msg in messages if 'content' in msg]
-    return jsonify({"status": "success", "messages": response_content}), 200
 
+        # Check the run status
+        if run.status == 'completed':
+            messages = client.beta.threads.messages.list(thread_id=thread.id)
+            response_content = [msg['content'] for msg in messages if 'content' in msg]
+            logging.info(f"Messages from assistant: {response_content}")
+            return jsonify({"status": "success", "messages": response_content}), 200
         else:
-            return jsonify({"status": "pending", "run_status": run.status}), 202
-    
+            logging.warning(f"Run status: {run.status}")
+            return jsonify({"status": "failure", "messages": ["Assistant did not complete the request."]}), 400
+
     except OpenAIError as e:
-        logging.error(f"OpenAI Error: {str(e)}")
+        logging.error(f"OpenAI error: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
     except Exception as e:
-        logging.error(f"Server Error: {str(e)}")
-        return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
+        logging.error(f"Error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-# Run the app on the port provided by Render
-if __name__ == "__main__":
-    port = int(os.environ.get('PORT', 5000))  # Use the port specified by Render
-    app.run(host='0.0.0.0', port=port)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
