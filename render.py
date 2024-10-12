@@ -1,48 +1,20 @@
-from flask import Flask, jsonify, request
-from openai import OpenAI, OpenAIError
-import os
-from dotenv import load_dotenv
-import logging
-
-# Load environment variables
-load_dotenv()
-
-# Initialize Flask app
-app = Flask(__name__)
-
-# Retrieve the OpenAI API key from environment variables
-api_key = os.getenv('OPENAI_API_KEY')
-
-# Initialize the OpenAI client
-client = OpenAI(api_key=api_key)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# Create assistant once for efficiency
-assistant = client.beta.assistants.create(
-    name="Math Tutor",
-    instructions="You are a personal math tutor. Write and run code to answer math questions.",
-    tools=[{"type": "code_interpreter"}],
-    model="gpt-4o",
-)
-
-# Define a route to solve math questions
 @app.route('/solve', methods=['POST'])
 def solve_equation():
     try:
-        # Ensure that the request contains JSON and a 'question'
+        logging.info("POST /solve request received")
+        
+        # Ensure the request contains JSON and a 'question'
         if not request.json or 'question' not in request.json:
+            logging.warning("No question provided in the request.")
             return jsonify({"status": "error", "message": "No question provided."}), 400
         
         # Get the user's math question from the request
         user_question = request.json['question']
-        
-        # Log the user question
-        logging.info(f"Received question: {user_question}")
+        logging.info(f"User's question: {user_question}")
         
         # Create a thread for the conversation
         thread = client.beta.threads.create()
+        logging.info(f"Created thread: {thread.id}")
         
         # Send the user's question to the assistant
         message = client.beta.threads.messages.create(
@@ -50,6 +22,7 @@ def solve_equation():
             role="user",
             content=user_question
         )
+        logging.info(f"Message sent to assistant: {message.content}")
         
         # Run the assistant with the instructions
         run = client.beta.threads.runs.create_and_poll(
@@ -57,13 +30,15 @@ def solve_equation():
             assistant_id=assistant.id,
             instructions="Please address the user as Jane Doe. The user has a premium account."
         )
+        logging.info(f"Run status: {run.status}")
         
-        # Check the run status and return messages if the task is completed
-        if run.status == 'completed': 
+        # Check if the run is completed
+        if run.status == 'completed':
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            # Return the assistant's messages as a response
+            logging.info("Run completed successfully.")
             return jsonify({"status": "success", "messages": [msg.content for msg in messages]}), 200
         else:
+            logging.warning(f"Run status: {run.status}")
             return jsonify({"status": "pending", "run_status": run.status}), 202
     
     except OpenAIError as e:
@@ -72,12 +47,3 @@ def solve_equation():
     except Exception as e:
         logging.error(f"Server Error: {str(e)}")
         return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
-
-# Define a health check route for Render
-@app.route('/')
-def index():
-    return "Math Tutor Flask app is running!"
-
-# Start the Flask app
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv("PORT", 5000)))
