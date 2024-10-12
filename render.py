@@ -36,6 +36,7 @@ def solve():
     try:
         data = request.json
         question = data.get('question', '')
+        logging.info(f"Received question: {question}")
 
         # Create a thread for the assistant
         thread = client.beta.threads.create()
@@ -59,6 +60,11 @@ def solve():
             messages = client.beta.threads.messages.list(thread_id=thread.id)
             response_content = [msg['content'] for msg in messages if 'content' in msg]
             logging.info(f"Messages from assistant: {response_content}")
+
+            # If there are no messages, return a helpful message
+            if not response_content:
+                return jsonify({"status": "success", "messages": ["No response from assistant."]}), 200
+            
             return jsonify({"status": "success", "messages": response_content}), 200
         else:
             logging.warning(f"Run status: {run.status}")
