@@ -58,6 +58,7 @@ def solve():
         response_message = ""
         has_received_content = False  # Track if content is received
 
+        run = None
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
