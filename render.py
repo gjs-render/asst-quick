@@ -32,7 +32,7 @@ def solve():
 
     logging.info(f"User input: {user_input}")
 
-    try:
+try:
     # Create assistant
     assistant = client.beta.assistants.create(
         name="Math Tutor",
@@ -40,7 +40,7 @@ def solve():
         tools=[{"type": "code_interpreter"}],
         model="gpt-4"
 )
-logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
+    logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
 
 
         logging.info(f"Assistant created: {assistant.id}")
