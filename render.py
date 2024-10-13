@@ -37,7 +37,7 @@ def solve():
         assistant = client.beta.assistants.create(
             name="Math Tutor",
             instructions="You are a personal math tutor. Write and run code to answer math questions.",
-            tools=[{"type": "code_interpreter"}],  # Ensure this tool is accessible
+            tools=[{"type": "code_interpreter"}],
             model="gpt-4"
         )
 
@@ -57,29 +57,33 @@ def solve():
 
         # Capture the assistant's response
         response_message = ""
+        has_received_content = False  # Track if content is received
+
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
             instructions="Please address the user as Jane Doe. The user has a premium account."
         ) as stream:
-            logging.info("Received stream response from assistant")
+            logging.info("Started receiving stream from assistant.")
+            
             for delta in stream:
-                logging.info(f"Stream delta: {delta}")
+                logging.info(f"Received delta: {delta}")
                 if hasattr(delta, 'content'):
-                    logging.info(f"Received content: {delta.content}")
+                    logging.info(f"Content found: {delta.content}")
                     response_message += delta.content
+                    has_received_content = True
                 else:
                     logging.warning(f"No content in delta: {delta}")
-
-        if not response_message:
-            logging.error("No response received from assistant.")
+        
+        if not has_received_content:
+            logging.error("No meaningful response received from assistant.")
             return jsonify({'error': 'No response received from the assistant.'}), 500
         
         return jsonify({'response': response_message.strip()})
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-        return jsonify({'error': 'An error occurred while processing your request.'}), 500  # Handle any other errors
+        return jsonify({'error': 'An error occurred while processing your request.'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
