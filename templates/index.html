@@ -5,56 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Tutor</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        #response {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-        }
+        body { font-family: Arial, sans-serif; margin: 50px; }
+        textarea { width: 100%; height: 100px; }
+        button { margin-top: 10px; }
+        #response { margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>Welcome to the Math Tutor!</h1>
-    <form id="questionForm">
-        <label for="question">Enter your math question:</label>
-        <input type="text" id="question" name="question" required>
-        <button type="submit">Solve</button>
-    </form>
-
+    <h1>Math Tutor</h1>
+    <textarea id="userInput" placeholder="Enter your math problem here..."></textarea>
+    <button id="solveButton">Solve</button>
     <div id="response"></div>
 
     <script>
-       class EventHandler(AssistantEventHandler):
-@override
-def on_text_created(self, text) → None:
-print(f"\nassistant > “, end=”", flush=True)
+        document.getElementById('solveButton').onclick = async function() {
+            const userInput = document.getElementById('userInput').value;
 
-@override
-def on_text_delta(self, delta, snapshot):
-    print(delta.value, end="", flush=True)
-    
-def on_tool_call_created(self, tool_call):
-    print(f"\nassistant > {tool_call.type}\n", flush=True)
+            const response = await fetch('/solve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ input: userInput })
+            });
 
-def on_tool_call_delta(self, delta, snapshot):
-    if delta.type == 'code_interpreter':
-        if delta.code_interpreter.input:
-            print(delta.code_interpreter.input, end="", flush=True)
-        if delta.code_interpreter.outputs:
-            print(f"\n\noutput >", flush=True)
-            for output in delta.code_interpreter.outputs:
-                if output.type == "logs":
-                    print(f"\n{output.logs}", flush=True)
+            const result = await response.json();
+            document.getElementById('response').innerText = result.response;
+        }
     </script>
 </body>
 </html>
