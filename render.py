@@ -34,11 +34,11 @@ def solve():
 
     try:
         # Create assistant
-    assistant = client.beta.assistants.create(
-    name="Math Tutor",
-    instructions="You are a personal math tutor. Write and run code to answer math questions.",
-    tools=[{"type": "code_interpreter"}],  # Ensure this tool is accessible
-    model="gpt-4"
+        assistant = client.beta.assistants.create(
+        name="Math Tutor",
+        instructions="You are a personal math tutor. Write and run code to answer math questions.",
+        tools=[{"type": "code_interpreter"}],  # Ensure this tool is accessible
+        model="gpt-4"
 )
 
         logging.info(f"Assistant created: {assistant.id}")
