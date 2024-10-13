@@ -4,34 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Tutor</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 50px; }
-        textarea { width: 100%; height: 100px; }
-        button { margin-top: 10px; }
-        #response { margin-top: 20px; }
-    </style>
 </head>
 <body>
     <h1>Math Tutor</h1>
-    <textarea id="userInput" placeholder="Enter your math problem here..."></textarea>
-    <button id="solveButton">Solve</button>
-    <div id="response"></div>
-
+    <form id="solveForm">
+        <input type="text" name="input" placeholder="Enter your equation" required>
+        <button type="submit">Solve</button>
+    </form>
+    
     <script>
-        document.getElementById('solveButton').onclick = async function() {
-            const userInput = document.getElementById('userInput').value;
-
+        document.getElementById('solveForm').addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent the form from submitting the default way
+            
+            const formData = new FormData(event.target);
             const response = await fetch('/solve', {
                 method: 'POST',
+                body: JSON.stringify({ input: formData.get('input') }),
                 headers: {
                     'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ input: userInput })
+                }
             });
 
-            const result = await response.json();
-            document.getElementById('response').innerText = result.response;
-        }
+            const data = await response.json();
+            console.log(data); // Handle response data
+        });
     </script>
 </body>
 </html>
