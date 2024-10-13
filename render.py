@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 from openai import OpenAI, OpenAIError
+from openai import AssistantEventHandler  # Import AssistantEventHandler
 from dotenv import load_dotenv
 import os
-from openai import AssistantEventHandler
 import logging
 
 # Load environment variables
@@ -52,11 +52,9 @@ def solve():
 
         # Event handler for handling assistant responses
         class EventHandler(AssistantEventHandler):
-            @override
             def on_text_created(self, text) -> None:
                 print(f"\nassistant > ", end="", flush=True)
                 
-            @override
             def on_text_delta(self, delta, snapshot):
                 print(delta.value, end="", flush=True)
 
