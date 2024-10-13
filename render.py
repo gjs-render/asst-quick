@@ -49,7 +49,7 @@ def solve():
         class EventHandler:
             def on_text_created(self, text):
                 print(f"\nassistant > {text}", end="", flush=True)
-
+            @override
             def on_text_delta(self, delta, snapshot):
                 print(delta.value, end="", flush=True)
 
@@ -65,16 +65,13 @@ def solve():
                         for output in delta.code_interpreter.outputs:
                             if output.type == "logs":
                                 print(f"\n{output.logs}", flush=True)
-
-        # Stream the response
+                                
         response_message = ""
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
-            instructions="Please address the user as Jane Doe. The user has a premium account.",
             event_handler=EventHandler()
         ) as stream:
-            # Collect the response from the stream
             stream.until_done()
         
         return jsonify({'response': response_message.strip()})
