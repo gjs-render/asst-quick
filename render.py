@@ -19,7 +19,12 @@ logging.basicConfig(level=logging.INFO)
 # Create Flask app
 app = Flask(__name__)
 
-@app.route('/')
+@app.route('/submit', methods=['POST'])
+def handle_submit():
+    data = request.form['data']
+    return f"Received: {data}"
+    
+    @app.route('/')
 def home():
     return render_template('index.html')
 
