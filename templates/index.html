@@ -1,42 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Math Tutor</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-<body>
-    <h1>Math Tutor</h1>
-    <form id="solve-form">
-        <label for="input">Enter your math question:</label>
-        <input type="text" id="input" name="input" required>
-        <button type="submit">Solve</button>
-    </form>
-    <div id="response"></div>
+<script>
+    $(document).ready(function() {
+        $('#solve-form').submit(function(event) {
+            event.preventDefault(); // Prevent default form submission
 
-    <script>
-        $(document).ready(function() {
-            $('#solve-form').submit(function(event) {
-                event.preventDefault(); // Prevent the form from submitting the traditional way
-                
-                const userInput = $('#input').val();
-                
-                // Send the input to the Flask backend
-                $.ajax({
-                    type: 'POST',
-                    url: '/solve',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ input: userInput }),
-                    success: function(response) {
-                        $('#response').text(response.response); // Display the response in the div
-                    },
-                    error: function(xhr) {
-                        $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
+            const userInput = $('#input').val();
+
+            // Check if input is valid
+            if (!userInput) {
+                $('#response').text('Please enter valid input.');
+                return;
+            }
+
+            // Debugging: Log the data being sent
+            console.log("Sending data to Flask: ", userInput);
+
+            // Send the input to the Flask backend
+            $.ajax({
+                type: 'POST',
+                url: '/solve',
+                contentType: 'application/json',
+                data: JSON.stringify({ input: userInput }),
+                success: function(response) {
+                    console.log("Response received from Flask: ", response);
+                    if (response && response.response) {
+                        $('#response').text(response.response); // Display response
+                    } else {
+                        $('#response').text('Unexpected response format.');
                     }
-                });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error occurred: ", xhr, status, error);
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
+                    } else {
+                        $('#response').text('An error occurred.'); // Generic error message
+                    }
+                }
             });
         });
-    </script>
-</body>
-</html>
+    });
+</script>
