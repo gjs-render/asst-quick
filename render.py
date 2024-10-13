@@ -24,7 +24,7 @@ def handle_submit():
     data = request.form['data']
     return f"Received: {data}"
     
-    @app.route('/')
+@app.route('/')
 def home():
     return render_template('index.html')
 
