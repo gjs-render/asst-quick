@@ -33,13 +33,15 @@ def solve():
     logging.info(f"User input: {user_input}")
 
     try:
-        # Create assistant
-        assistant = client.beta.assistants.create(
-            name="Math Tutor",
-            instructions="You are a personal math tutor. Write and run code to answer math questions.",
-            tools=[{"type": "code_interpreter"}],
-            model="gpt-4"
-        )
+    # Create assistant
+    assistant = client.beta.assistants.create(
+        name="Math Tutor",
+        instructions="You are a personal math tutor. Write and run code to answer math questions.",
+        tools=[{"type": "code_interpreter"}],
+        model="gpt-4"
+)
+logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
+
 
         logging.info(f"Assistant created: {assistant.id}")
 
@@ -74,6 +76,12 @@ def solve():
                     has_received_content = True
                 else:
                     logging.warning(f"No content in delta: {delta}")
+                    
+                if hasattr(delta, 'error'):
+                    logging.error(f"Assistant returned an error: {delta.error}")
+                else:
+                    logging.warning(f"No content in delta: {delta}")
+
         
         if not has_received_content:
             logging.error("No meaningful response received from assistant.")
