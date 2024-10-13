@@ -30,7 +30,6 @@ def home():
 
 @app.route('/solve', methods=['POST'])
 def solve():
-    # Extract user input from the request
     user_input = request.json.get('input')
     if not user_input:
         return jsonify({'error': 'Input is required'}), 400  # Handle missing input
@@ -38,14 +37,21 @@ def solve():
     logging.info(f"User input: {user_input}")
 
     try:
-        # Create assistant
-        assistant = client.beta.assistants.create(
-            name="Math Tutor",
-            instructions="You are a personal math tutor. Write and run code to answer math questions.",
-            tools=[{"type": "code_interpreter"}],
-            model="gpt-4"
-        )
-        logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
+        # Create assistant (only if it doesn't exist)
+        assistant_name = "Math Tutor"
+        existing_assistants = client.beta.assistants.list()  # Check for existing assistants
+        assistant = next((a for a in existing_assistants if a.name == assistant_name), None)
+        
+        if not assistant:
+            assistant = client.beta.assistants.create(
+                name=assistant_name,
+                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                tools=[{"type": "code_interpreter"}],
+                model="gpt-4"
+            )
+            logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
+        else:
+            logging.info(f"Using existing assistant: {assistant.id}")
 
         # Create a new thread
         thread = client.beta.threads.create()
@@ -61,9 +67,8 @@ def solve():
 
         # Capture the assistant's response
         response_message = ""
-        has_received_content = False  # Track if content is received
+        has_received_content = False
 
-        run = None
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
@@ -72,15 +77,11 @@ def solve():
             logging.info("Started receiving stream from assistant.")
             
             for delta in stream:
-                logging.info(f"Received delta: {delta}")
                 if hasattr(delta, 'content'):
                     logging.info(f"Content found: {delta.content}")
                     response_message += delta.content
                     has_received_content = True
-                else:
-                    logging.warning(f"No content in delta: {delta}")
-                    
-                if hasattr(delta, 'error'):
+                elif hasattr(delta, 'error'):
                     logging.error(f"Assistant returned an error: {delta.error}")
 
         if not has_received_content:
@@ -92,9 +93,6 @@ def solve():
     except Exception as e:
         logging.error(f"An error occurred: {e}")
         return jsonify({'error': 'An error occurred while processing your request.'}), 500
-
-    # Ensure there is a return statement at the end
-    return jsonify({'error': 'Unexpected error occurred.'}), 500  # Fallback return in case all else fails
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
