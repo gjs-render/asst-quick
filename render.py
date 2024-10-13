@@ -19,6 +19,14 @@ logging.basicConfig(level=logging.INFO)
 # Create Flask app
 app = Flask(__name__)
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/solve', methods=['POST'])
+def solve():
+    user_input = request.json.get('input')
+
 
 assistant = client.beta.assistants.create(
   name="Math Tutor",
