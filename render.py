@@ -46,9 +46,11 @@ def solve():
         )
 
         # Event handler for handling assistant responses
-        class EventHandler:
-            def on_text_created(self, text):
-                print(f"\nassistant > {text}", end="", flush=True)
+            class EventHandler(AssistantEventHandler):
+            @override
+            def on_text_created(self, text) → None:
+            print(f"\nassistant > “, end=”", flush=True)
+                
             @override
             def on_text_delta(self, delta, snapshot):
                 print(delta.value, end="", flush=True)
