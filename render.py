@@ -1,9 +1,8 @@
-from flask import Flask, request, jsonify, render_template
-from openai import OpenAI, OpenAIError
-import os
+from flask import Flask, render_template, request, jsonify
+from openai import OpenAI
 from dotenv import load_dotenv
+import os
 import logging
-import time  # Import time for sleep functionality
 
 # Load environment variables
 load_dotenv()
@@ -17,77 +16,55 @@ client = OpenAI(api_key=api_key)
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-# Create a Flask application
+# Create Flask app
 app = Flask(__name__)
-
-# Create the assistant once when the app starts
-assistant = client.beta.assistants.create(
-    name="Math Tutor",
-    instructions="You are a personal math tutor. Your job is to solve mathematical equations and explain the solutions.",
-    tools=[{"type": "code_interpreter"}],
-    model="gpt-4o",
-)
 
 @app.route('/')
 def home():
-    """Render the home page."""
     return render_template('index.html')
 
 @app.route('/solve', methods=['POST'])
 def solve():
-    """Handle the POST request to solve a math question."""
+    # Extract user input from the request
+    user_input = request.json.get('input')
+    if not user_input:
+        return jsonify({'error': 'Input is required'}), 400  # Handle missing input
+
     try:
-        data = request.json
+        # Create assistant
+        assistant = client.beta.assistants.create(
+            name="Math Tutor",
+            instructions="You are a personal math tutor. Write and run code to answer math questions.",
+            tools=[{"type": "code_interpreter"}],
+            model="gpt-4o",
+        )
 
-        if not data or 'question' not in data:
-            return jsonify({"status": "error", "message": "No question provided."}), 400
-
-        question = data['question']
-        logging.info(f"Received question: {question}")
-
-        # Create a thread for the assistant
+        # Create a new thread
         thread = client.beta.threads.create()
 
-        # Send the user's message to the assistant
+        # Send the user message
         client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
-            content=question
+            content=user_input
         )
 
-        # Run the assistant and wait for completion
-        run = client.beta.threads.runs.create(
+        # Capture the assistant's response
+        response_message = ""
+        with client.beta.threads.runs.stream(
             thread_id=thread.id,
-            assistant_id=assistant.id
-        )
+            assistant_id=assistant.id,
+            instructions="Please address the user as Jane Doe. The user has a premium account."
+        ) as stream:
+            for delta in stream:
+                if hasattr(delta, 'content'):
+                    response_message += delta.content
 
-        # Poll the run status
-        while True:
-            run_status = client.beta.threads.runs.retrieve(
-                thread_id=thread.id, run_id=run.id
-            )
-            logging.info(f"Run status: {run_status.status}")
-            if run_status.status == "completed":
-                break
-            time.sleep(1)  # Wait for a second before checking again
+        return jsonify({'response': response_message.strip()})
 
-        # Retrieve and return the latest message from the assistant
-        messages = client.beta.threads.messages.list(thread_id=thread.id)
-
-        # Check if we have messages
-        if messages.data:
-            last_message = messages.data[-1]  # Get the last message object
-            response = last_message.content if hasattr(last_message, 'content') else "No valid content in response."
-            return jsonify({"response": response, "status": "success"})
-        else:
-            return jsonify({"response": "No response from assistant.", "status": "success"})
-
-    except OpenAIError as e:
-        logging.error(f"OpenAI Error: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
     except Exception as e:
-        logging.error(f"Unexpected Error: {e}")
-        return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
+        logging.error(f"An error occurred: {e}")
+        return jsonify({'error': 'An error occurred while processing your request.'}), 500  # Handle any other errors
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))  # Use PORT from environment variables
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
