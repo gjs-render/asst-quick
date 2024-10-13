@@ -88,3 +88,4 @@ def solve():
 if __name__ == '__main__':
     # Run the app on the specified port (Render uses port 5000 by default)
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
