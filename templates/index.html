@@ -28,6 +28,24 @@
             const data = await response.json();
             console.log(data); // Handle response data
         });
+
+          document.getElementById('solveForm').addEventListener('submit', async (event) => {
+        event.preventDefault(); // Prevent the form from submitting the default way
+        
+        const formData = new FormData(event.target);
+        console.log("Form submitted with input:", formData.get('input')); // Log the input
+        const response = await fetch('/solve', {
+            method: 'POST',
+            body: JSON.stringify({ input: formData.get('input') }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+        console.log(data); // Handle response data
+    });
+        
     </script>
 </body>
 </html>
