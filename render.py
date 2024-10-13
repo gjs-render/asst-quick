@@ -1,3 +1,28 @@
+from flask import Flask, render_template, request, jsonify
+from openai import OpenAI
+from dotenv import load_dotenv
+import os
+import logging
+
+# Load environment variables
+load_dotenv()
+
+# Retrieve the OpenAI API key from environment variables
+api_key = os.getenv('OPENAI_API_KEY')
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=api_key)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# Create Flask app
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
 @app.route('/solve', methods=['POST'])
 def solve():
     # Extract user input from the request
@@ -64,3 +89,6 @@ def solve():
 
     # Ensure there is a return statement at the end
     return jsonify({'error': 'Unexpected error occurred.'}), 500  # Fallback return in case all else fails
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
