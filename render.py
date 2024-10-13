@@ -27,11 +27,16 @@ def home():
 
 @app.route('/solve', methods=['POST'])
 def solve():
+    # Extract user input from the request
     user_input = request.json.get('input')
     if not user_input:
-        return jsonify({'error': 'Input is required'}), 400
+        return jsonify({'error': 'Input is required'}), 400  # Handle missing input
 
     try:
+        # Log the user input
+        logging.info(f"User input: {user_input}")
+        
+        # Create assistant
         assistant = client.beta.assistants.create(
             name="Math Tutor",
             instructions="You are a personal math tutor. Write and run code to answer math questions.",
@@ -39,13 +44,26 @@ def solve():
             model="gpt-4o",
         )
 
+        # Log assistant creation
+        logging.info(f"Assistant created: {assistant.id}")
+
+        # Create a new thread
         thread = client.beta.threads.create()
+
+        # Log thread creation
+        logging.info(f"Thread created: {thread.id}")
+
+        # Send the user message
         client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=user_input
         )
 
+        # Log that message was sent
+        logging.info("Message sent to the assistant.")
+
+        # Capture the assistant's response
         response_message = ""
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
@@ -55,8 +73,15 @@ def solve():
             for delta in stream:
                 if hasattr(delta, 'content'):
                     response_message += delta.content
+                    logging.info(f"Received delta content: {delta.content}")
 
-        return jsonify({'response': response_message.strip()})
+        # Check if a response was captured
+        if response_message.strip():
+            logging.info(f"Final response: {response_message.strip()}")
+            return jsonify({'response': response_message.strip()})
+        else:
+            logging.error("No response received from assistant.")
+            return jsonify({'error': 'No response received from assistant.'}), 500
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
