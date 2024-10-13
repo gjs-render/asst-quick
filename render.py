@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from openai import OpenAI, OpenAIError
 from dotenv import load_dotenv
 import os
@@ -26,6 +26,10 @@ assistant = client.beta.assistants.create(
     tools=[{"type": "code_interpreter"}],
     model="gpt-4"
 )
+
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 @app.route('/solve', methods=['POST'])
 def solve():
@@ -67,7 +71,7 @@ def solve():
                         for output in delta.code_interpreter.outputs:
                             if output.type == "logs":
                                 print(f"\n{output.logs}", flush=True)
-                                
+        
         response_message = ""
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
@@ -88,4 +92,3 @@ def solve():
 if __name__ == '__main__':
     # Run the app on the specified port (Render uses port 5000 by default)
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
