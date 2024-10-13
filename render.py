@@ -32,18 +32,15 @@ def solve():
 
     logging.info(f"User input: {user_input}")
 
-try:
-    # Create assistant
-    assistant = client.beta.assistants.create(
-        name="Math Tutor",
-        instructions="You are a personal math tutor. Write and run code to answer math questions.",
-        tools=[{"type": "code_interpreter"}],
-        model="gpt-4"
-)
-    logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
-
-
-        logging.info(f"Assistant created: {assistant.id}")
+    try:
+        # Create assistant
+        assistant = client.beta.assistants.create(
+            name="Math Tutor",
+            instructions="You are a personal math tutor. Write and run code to answer math questions.",
+            tools=[{"type": "code_interpreter"}],
+            model="gpt-4"
+        )
+        logging.info(f"Assistant created: {assistant.id}, Tools: {assistant.tools}")
 
         # Create a new thread
         thread = client.beta.threads.create()
@@ -79,10 +76,7 @@ try:
                     
                 if hasattr(delta, 'error'):
                     logging.error(f"Assistant returned an error: {delta.error}")
-                else:
-                    logging.warning(f"No content in delta: {delta}")
 
-        
         if not has_received_content:
             logging.error("No meaningful response received from assistant.")
             return jsonify({'error': 'No response received from the assistant.'}), 500
