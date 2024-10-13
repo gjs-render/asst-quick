@@ -34,12 +34,13 @@ def solve():
 
     try:
         # Create assistant
-        assistant = client.beta.assistants.create(
-            name="Math Tutor",
-            instructions="You are a personal math tutor. Write and run code to answer math questions.",
-            # Temporarily remove the tools for debugging
-            model="gpt-4"
-        )
+    assistant = client.beta.assistants.create(
+    name="Math Tutor",
+    instructions="You are a personal math tutor. Write and run code to answer math questions.",
+    tools=[{"type": "code_interpreter"}],  # Ensure this tool is accessible
+    model="gpt-4"
+)
+
         logging.info(f"Assistant created: {assistant.id}")
 
         # Create a new thread
@@ -56,19 +57,20 @@ def solve():
 
         # Capture the assistant's response
         response_message = ""
-        with client.beta.threads.runs.stream(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            instructions="Please address the user as Jane Doe. The user has a premium account."
-        ) as stream:
-            logging.info("Received stream response from assistant")
-            for delta in stream:
-                logging.info(f"Stream delta: {delta}")
-                if hasattr(delta, 'content'):
-                    response_message += delta.content
-                    logging.info(f"Appending content: {delta.content}")
-                else:
-                    logging.info(f"No content in this delta: {delta}")
+         with client.beta.threads.runs.stream(
+        thread_id=thread.id,
+        assistant_id=assistant.id,
+        instructions="Please address the user as Jane Doe. The user has a premium account."
+) as stream:
+    logging.info("Received stream response from assistant")
+    for delta in stream:
+        logging.info(f"Stream delta: {delta}")
+        if hasattr(delta, 'content'):
+            logging.info(f"Received content: {delta.content}")
+            response_message += delta.content
+        else:
+            logging.warning(f"No content in delta: {delta}")
+
 
         if not response_message:
             logging.error("No response received from assistant.")
