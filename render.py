@@ -78,6 +78,7 @@ def solve():
             event_handler=EventHandler()
         ) as stream:
             stream.until_done()
+            run = stream.get_final_run()
         
         return jsonify({'response': response_message.strip()})
 
