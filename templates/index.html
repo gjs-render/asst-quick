@@ -1,55 +1,42 @@
-@app.route('/solve', methods=['POST'])
-def solve():
-    try:
-        # Get user input from request
-        user_input = request.json.get('input')
-        if not user_input:
-            return jsonify({'error': 'Input is required'}), 400
-        
-        # Create a new thread for the user input
-        thread = client.beta.threads.create()
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Tutor</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Math Tutor</h1>
+    <form id="solve-form">
+        <label for="input">Enter your math question:</label>
+        <input type="text" id="input" name="input" required>
+        <button type="submit">Solve</button>
+    </form>
+    <div id="response"></div>
 
-        # Send the user message to the assistant
-        message = client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=user_input
-        )
-
-        # Event handler for handling assistant responses
-        class EventHandler(AssistantEventHandler):
-            def on_text_created(self, text):
-                print(f"\nassistant > ", end="", flush=True)
-
-            def on_text_delta(self, delta, snapshot):
-                print(delta.value, end="", flush=True)
-
-            def on_tool_call_created(self, tool_call):
-                print(f"\nassistant > {tool_call.type}\n", flush=True)
-
-            def on_tool_call_delta(self, delta, snapshot):
-                if delta.type == 'code_interpreter':
-                    if delta.code_interpreter.input:
-                        print(delta.code_interpreter.input, end="", flush=True)
-                    if delta.code_interpreter.outputs:
-                        print(f"\n\noutput >", flush=True)
-                        for output in delta.code_interpreter.outputs:
-                            if output.type == "logs":
-                                print(f"\n{output.logs}", flush=True)
-                                
-        response_message = ""
-        with client.beta.threads.runs.stream(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            event_handler=EventHandler()
-        ) as stream:
-            stream.until_done()
-        
-        return jsonify({'response': response_message.strip()})
-
-    except OpenAIError as e:
-        logging.error(f"OpenAI error occurred: {e}")
-        return jsonify({'error': 'An error occurred while communicating with OpenAI.'}), 500
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        return jsonify({'error': 'An unexpected error occurred.'}), 500
+    <script>
+        $(document).ready(function() {
+            $('#solve-form').submit(function(event) {
+                event.preventDefault(); // Prevent the form from submitting the traditional way
+                
+                const userInput = $('#input').val();
+                
+                // Send the input to the Flask backend
+                $.ajax({
+                    type: 'POST',
+                    url: '/solve',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ input: userInput }),
+                    success: function(response) {
+                        $('#response').text(response.response); // Display the response in the div
+                    },
+                    error: function(xhr) {
+                        $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
