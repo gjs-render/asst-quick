@@ -29,8 +29,10 @@
                     contentType: 'application/json',
                     data: JSON.stringify({ input: userInput }),
                     success: function(response) {
-                        $('#response').text(response.response); // Display the response in the div
+                        console.log('Response:', response); // Log the response
+                        $('#response').text(response.response);
                     },
+
                     error: function(xhr) {
                         $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
                     }
