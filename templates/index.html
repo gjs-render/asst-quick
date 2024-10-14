@@ -1,98 +1,51 @@
-from flask import Flask, request, jsonify, render_template
-from openai import OpenAI, OpenAIError
-from dotenv import load_dotenv
-import os
-import logging
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Tutor Assistant</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Math Tutor Assistant</h1>
+        <form id="math-form">
+            <div class="mb-3">
+                <label for="input" class="form-label">Enter a Math Problem:</label>
+                <input type="text" class="form-control" id="input" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Solve</button>
+        </form>
+        <div id="response-container" class="mt-4">
+            <h3>Response:</h3>
+            <p id="response"></p>
+        </div>
+    </div>
 
-# Load environment variables
-load_dotenv()
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $('#math-form').submit(function(event) {
+            event.preventDefault();
+            const userInput = $('#input').val();
 
-# Retrieve the OpenAI API key from environment variables
-api_key = os.getenv('OPENAI_API_KEY')
+            // Clear the previous response
+            $('#response').text('');
 
-# Initialize the OpenAI client
-client = OpenAI(api_key=api_key)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# Create Flask app
-app = Flask(__name__)
-
-# Create assistant
-assistant = client.beta.assistants.create(
-    name="Math Tutor",
-    instructions="You are a personal math tutor. Write and run code to answer math questions.",
-    tools=[{"type": "code_interpreter"}],
-    model="gpt-4"
-)
-
-# Initialize a global variable to hold the assistant's response
-response_message = ""
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/solve', methods=['POST'])
-def solve():
-    try:
-        global response_message
-        user_input = request.json.get('input')
-        if not user_input:
-            return jsonify({'error': 'Input is required'}), 400
-        
-        # Create a new thread for the user input
-        thread = client.beta.threads.create()
-
-        # Send the user message to the assistant
-        message = client.beta.threads.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=user_input
-        )
-
-        # Event handler for handling assistant responses
-        class EventHandler(AssistantEventHandler):
-            def on_text_created(self, text):
-                global response_message
-                response_message = ""  # Reset the response message
-                print(f"\nassistant > ", end="", flush=True)
-
-            def on_text_delta(self, delta, snapshot):
-                global response_message
-                response_message += delta.value  # Append content to response_message
-                print(delta.value, end="", flush=True)
-
-            def on_tool_call_created(self, tool_call):
-                print(f"\nassistant > {tool_call.type}\n", flush=True)
-
-            def on_tool_call_delta(self, delta, snapshot):
-                if delta.type == 'code_interpreter':
-                    if delta.code_interpreter.input:
-                        print(delta.code_interpreter.input, end="", flush=True)
-                    if delta.code_interpreter.outputs:
-                        print(f"\n\noutput >", flush=True)
-                        for output in delta.code_interpreter.outputs:
-                            if output.type == "logs":
-                                print(f"\n{output.logs}", flush=True)
-
-        # Stream the response from the assistant
-        with client.beta.threads.runs.stream(
-            thread_id=thread.id,
-            assistant_id=assistant.id,
-            event_handler=EventHandler()
-        ) as stream:
-            stream.until_done()
-
-        return jsonify({'response': response_message.strip()})
-
-    except OpenAIError as e:
-        logging.error(f"OpenAI error occurred: {e}")
-        return jsonify({'error': 'An error occurred while communicating with OpenAI.'}), 500
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        return jsonify({'error': 'An unexpected error occurred.'}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+            // Make an AJAX request to the /solve endpoint
+            $.ajax({
+                type: 'POST',
+                url: '/solve',
+                contentType: 'application/json',
+                data: JSON.stringify({ input: userInput }),
+                success: function(response) {
+                    $('#response').text(response.response); // Display the assistant's response
+                },
+                error: function(xhr) {
+                    $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
+                }
+            });
+        });
+    </script>
+</body>
+</html>
