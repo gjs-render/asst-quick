@@ -1,42 +1,74 @@
-<script>
-    $(document).ready(function() {
-        $('#solve-form').submit(function(event) {
-            event.preventDefault(); // Prevent default form submission
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solve Form</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Include jQuery -->
+</head>
+<body>
 
-            const userInput = $('#input').val();
+    <!-- Form for user input -->
+    <form id="solve-form">
+        <input id="input" type="text" placeholder="Enter input" required />
+        <button type="submit">Submit</button>
+    </form>
 
-            // Check if input is valid
-            if (!userInput) {
-                $('#response').text('Please enter valid input.');
-                return;
-            }
+    <!-- Area to display response from server -->
+    <div id="response"></div>
 
-            // Debugging: Log the data being sent
-            console.log("Sending data to Flask: ", userInput);
+    <!-- JavaScript to handle form submission and AJAX request -->
+    <script>
+        $(document).ready(function() {
+            // Cache DOM elements for better performance
+            const $inputField = $('#input');
+            const $responseField = $('#response');
 
-            // Send the input to the Flask backend
-            $.ajax({
-                type: 'POST',
-                url: '/solve',
-                contentType: 'application/json',
-                data: JSON.stringify({ input: userInput }),
-                success: function(response) {
-                    console.log("Response received from Flask: ", response);
-                    if (response && response.response) {
-                        $('#response').text(response.response); // Display response
-                    } else {
-                        $('#response').text('Unexpected response format.');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error occurred: ", xhr, status, error);
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        $('#response').text('Error: ' + xhr.responseJSON.error); // Display error message
-                    } else {
-                        $('#response').text('An error occurred.'); // Generic error message
-                    }
+            // Handle form submission
+            $('#solve-form').submit(function(event) {
+                event.preventDefault(); // Prevent default form submission behavior
+
+                const userInput = $inputField.val().trim(); // Get and trim input value
+
+                // Check if the input is valid (non-empty)
+                if (!userInput) {
+                    $responseField.text('Please enter valid input.');
+                    return;
                 }
+
+                // Log the data being sent (for debugging)
+                console.log("Sending data to Flask: ", userInput);
+
+                // Send input to the Flask backend using an AJAX POST request
+                $.ajax({
+                    type: 'POST',
+                    url: '/solve',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ input: userInput }), // Send input in JSON format
+                    success: function(response) {
+                        console.log("Response received from Flask: ", response);
+
+                        // Display the response if it's correctly formatted
+                        if (response && response.response) {
+                            $responseField.text(response.response);
+                        } else {
+                            $responseField.text('Unexpected response format.'); // Handle unexpected response
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error occurred: ", xhr, status, error); // Log error for debugging
+
+                        // Handle different error cases
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            $responseField.text('Error: ' + xhr.responseJSON.error); // Specific error message from Flask
+                        } else {
+                            $responseField.text('An unexpected error occurred.'); // General fallback error message
+                        }
+                    }
+                });
             });
         });
-    });
-</script>
+    </script>
+
+</body>
+</html>
