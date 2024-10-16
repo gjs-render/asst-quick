@@ -4,6 +4,7 @@ from openai import AssistantEventHandler
 from dotenv import load_dotenv
 import os
 import logging
+import re  # Import regex for text processing
 
 # Load environment variables
 load_dotenv()
@@ -30,6 +31,12 @@ def initialize_assistant():
             model="gpt-4o"
         )
 
+def clean_response(text):
+    # Use regex to remove unwanted characters
+    cleaned_text = re.sub(r'[\\()]', '', text)  # Remove parentheses and backslashes
+    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)  # Replace multiple spaces with a single space
+    return cleaned_text.strip()
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -55,7 +62,6 @@ def solve():
 
         class EventHandler(AssistantEventHandler):
             def on_text_created(self, text) -> None:
-                # We will rely primarily on on_text_delta to manage text updates
                 logging.info(f"on_text_created (ignored initial): {text.value}")
 
             def on_text_delta(self, delta, snapshot):
@@ -85,7 +91,10 @@ def solve():
         ) as stream:
             stream.until_done()
 
-        return jsonify({'response': ''.join(response_message).strip()})
+        # Clean the concatenated response
+        cleaned_response = clean_response(''.join(response_message))
+        
+        return jsonify({'response': cleaned_response})
     
     except OpenAIError as e:
         logging.error(f"OpenAI error occurred: {e}")
