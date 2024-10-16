@@ -27,7 +27,6 @@ def initialize_assistant():
         assistant = client.beta.assistants.create(
             name="Math Tutor",
             instructions="You are a personal math tutor. Write and run code to answer math questions.",
-            # tools=[{"type": "code_interpreter"}],  # Uncomment if necessary
             model="gpt-4o"
         )
 
@@ -56,12 +55,12 @@ def solve():
 
         class EventHandler(AssistantEventHandler):
             def on_text_created(self, text) -> None:
-                logging.info(f"on_text_created: {text}")
-                response_message.append(text)
+                logging.info(f"on_text_created: {text.value}")
+                response_message.append(text.value)  # Convert to string
 
             def on_text_delta(self, delta, snapshot):
                 logging.info(f"on_text_delta: {delta.value}")
-                response_message.append(delta.value)
+                response_message.append(delta.value)  # Convert to string
             
             def on_tool_call_created(self, tool_call):
                 logging.info(f"Tool call created: {tool_call.type}")
@@ -73,7 +72,6 @@ def solve():
                         response_message.append(delta.code_interpreter.input)
                     if delta.code_interpreter.outputs:
                         logging.info("Interpreter outputs:")
-                        response_message.append("\n\noutput >")
                         for output in delta.code_interpreter.outputs:
                             if output.type == "logs":
                                 logging.info(output.logs)
