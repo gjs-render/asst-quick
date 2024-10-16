@@ -26,7 +26,7 @@ def initialize_assistant():
     if assistant is None:
         assistant = client.beta.assistants.create(
             name="Math Tutor",
-            instructions="You are a personal math tutor. Write and run code to answer math questions.Please explain your answers.",
+            instructions="You are a personal math tutor. Write and run code to answer math questions.",
             model="gpt-4o"
         )
 
@@ -55,12 +55,13 @@ def solve():
 
         class EventHandler(AssistantEventHandler):
             def on_text_created(self, text) -> None:
-                logging.info(f"on_text_created: {text.value}")
-                response_message.append(text.value)  # Convert to string
+                # We will rely primarily on on_text_delta to manage text updates
+                logging.info(f"on_text_created (ignored initial): {text.value}")
 
             def on_text_delta(self, delta, snapshot):
+                # Use on_text_delta to capture text incrementally
                 logging.info(f"on_text_delta: {delta.value}")
-                response_message.append(delta.value)  # Convert to string
+                response_message.append(delta.value)
             
             def on_tool_call_created(self, tool_call):
                 logging.info(f"Tool call created: {tool_call.type}")
