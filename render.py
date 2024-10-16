@@ -26,7 +26,7 @@ def initialize_assistant():
     if assistant is None:
         assistant = client.beta.assistants.create(
             name="Math Tutor",
-            instructions="You are a personal math tutor. Write and run code to answer math questions.",
+            instructions="You are a personal math tutor. Write and run code to answer math questions.Please explain your answers.",
             model="gpt-4o"
         )
 
