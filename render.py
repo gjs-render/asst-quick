@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request, jsonify
 from openai import OpenAI, OpenAIError
 from openai import AssistantEventHandler
 from dotenv import load_dotenv
@@ -8,24 +8,28 @@ import logging
 # Load environment variables
 load_dotenv()
 
-# Retrieve the OpenAI API key from environment variables
+# OpenAI API setup
 api_key = os.getenv('OPENAI_API_KEY')
 client = OpenAI(api_key=api_key)
 
-# Configure logging
+# Logging configuration
 logging.basicConfig(level=logging.INFO)
 
-# Create Flask app
+# Initialize Flask app
 app = Flask(__name__)
 
-@app.before_first_request
-def setup_assistant():
+# Global assistant instance
+assistant = None
+
+def initialize_assistant():
     global assistant
-    assistant = client.beta.assistants.create(
-        name="Math Tutor",
-        instructions="You are a personal math tutor. Write and run code to answer math questions.",
-        model="gpt-4o"
-    )
+    if assistant is None:
+        assistant = client.beta.assistants.create(
+            name="Math Tutor",
+            instructions="You are a personal math tutor. Write and run code to answer math questions.",
+            # tools=[{"type": "code_interpreter"}],  # Uncomment if necessary
+            model="gpt-4o"
+        )
 
 @app.route('/')
 def home():
@@ -33,6 +37,9 @@ def home():
 
 @app.route('/solve', methods=['POST'])
 def solve():
+    # Initialize assistant as needed
+    initialize_assistant()
+
     try:
         user_input = request.json.get('input')
         if not user_input:
@@ -71,15 +78,14 @@ def solve():
                             if output.type == "logs":
                                 logging.info(output.logs)
                                 response_message.append(output.logs)
-        
+
         with client.beta.threads.runs.stream(
             thread_id=thread.id,
             assistant_id=assistant.id,
             event_handler=EventHandler()
         ) as stream:
             stream.until_done()
-        
-        # Return the concatenated response
+
         return jsonify({'response': ''.join(response_message).strip()})
     
     except OpenAIError as e:
