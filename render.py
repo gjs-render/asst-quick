@@ -1,11 +1,10 @@
-file_content = """
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI, OpenAIError
 from openai import AssistantEventHandler
 from dotenv import load_dotenv
 import os
 import logging
-import re  # Import regex for text processing
+import re
 from html import escape
 import string
 
@@ -47,7 +46,6 @@ def filter_profanity(text):
     return text
 
 def correct_punctuation(text):
-    # Remove extra spaces around punctuation
     for p in string.punctuation:
         text = text.replace(f' {p}', p).replace(f'{p} ', p)
     return text
@@ -57,8 +55,7 @@ def clean_response(text):
     text = normalize_text(text)
     text = filter_profanity(text)
     text = correct_punctuation(text)
-    # Use regex to remove unwanted characters and redundant spaces
-    text = re.sub(r'[\\()]', '', text)  
+    text = re.sub(r'[\\()]', '', text)
     text = re.sub(r'\\s+', ' ', text)
     return text.strip()
 
@@ -127,10 +124,3 @@ def solve():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-"""
-
-# Save the file
-# For example, use the current directory:
-# For example, use the current directory:
-with open("flask_app_with_cleaning.py", "w") as file:
-    file.write(file_content)
