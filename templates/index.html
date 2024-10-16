@@ -4,18 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Math Tutor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-    <h1>Math Tutor</h1>
-    <form id="solve-form">
-        <label for="input">Enter your math question:</label>
-        <input type="text" id="input" name="input" required>
-        <button type="submit">Solve</button>
-    </form>
-    <div id="response"></div>
+    <div class="container">
+        <h1>Math Tutor</h1>
+        <form id="solve-form">
+            <div class="form-group">
+                <label for="input">Enter your math question:</label>
+                <input type="text" id="input" name="input" required>
+            </div>
+            <button type="submit">Solve</button>
+        </form>
+        <div id="response"></div>
+    </div>
     <script>
         $(document).ready(function() {
             $('#solve-form').submit(function(event) {
