@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;700&display=swap');
+
 body {
     font-family: 'Roboto Mono', monospace;
     margin: 0;
@@ -8,7 +10,7 @@ body {
 
 .container {
     max-width: 800px;
-    margin: 0 auto;
+    margin: 20px auto;
     padding: 20px;
     background-color: white;
     border-radius: 8px;
@@ -22,7 +24,7 @@ h1 {
     font-size: 2.5rem;
 }
 
-#chat-form {
+#solve-form {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -43,7 +45,7 @@ label {
     font-weight: 300;
 }
 
-#user_input {
+input[type="text"] {
     padding: 10px;
     font-size: 16px;
     border: 1px solid #ccc;
@@ -52,7 +54,7 @@ label {
     max-width: 400px;
 }
 
-#chat-history {
+#response {
     font-family: 'Roboto Mono', monospace;
     white-space: pre-wrap;
     padding: 20px;
