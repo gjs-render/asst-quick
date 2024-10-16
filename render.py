@@ -1,3 +1,4 @@
+file_content = """
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI, OpenAIError
 from openai import AssistantEventHandler
@@ -5,6 +6,8 @@ from dotenv import load_dotenv
 import os
 import logging
 import re  # Import regex for text processing
+from html import escape
+import string
 
 # Load environment variables
 load_dotenv()
@@ -31,11 +34,33 @@ def initialize_assistant():
             model="gpt-4o"
         )
 
+def clean_html(text):
+    return escape(text)
+
+def normalize_text(text):
+    return text.lower()
+
+def filter_profanity(text):
+    profanity_list = ['badword1', 'badword2']
+    for word in profanity_list:
+        text = text.replace(word, '*' * len(word))
+    return text
+
+def correct_punctuation(text):
+    # Remove extra spaces around punctuation
+    for p in string.punctuation:
+        text = text.replace(f' {p}', p).replace(f'{p} ', p)
+    return text
+
 def clean_response(text):
-    # Use regex to remove unwanted characters
-    cleaned_text = re.sub(r'[\\()]', '', text)  # Remove parentheses and backslashes
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)  # Replace multiple spaces with a single space
-    return cleaned_text.strip()
+    text = clean_html(text)
+    text = normalize_text(text)
+    text = filter_profanity(text)
+    text = correct_punctuation(text)
+    # Use regex to remove unwanted characters and redundant spaces
+    text = re.sub(r'[\\()]', '', text)  
+    text = re.sub(r'\\s+', ' ', text)
+    return text.strip()
 
 @app.route('/')
 def home():
@@ -43,14 +68,13 @@ def home():
 
 @app.route('/solve', methods=['POST'])
 def solve():
-    # Initialize assistant as needed
     initialize_assistant()
 
     try:
         user_input = request.json.get('input')
         if not user_input:
             return jsonify({'error': 'Input is required'}), 400
-        
+
         thread = client.beta.threads.create()
         client.beta.threads.messages.create(
             thread_id=thread.id,
@@ -65,10 +89,9 @@ def solve():
                 logging.info(f"on_text_created (ignored initial): {text.value}")
 
             def on_text_delta(self, delta, snapshot):
-                # Use on_text_delta to capture text incrementally
                 logging.info(f"on_text_delta: {delta.value}")
                 response_message.append(delta.value)
-            
+
             def on_tool_call_created(self, tool_call):
                 logging.info(f"Tool call created: {tool_call.type}")
 
@@ -91,7 +114,6 @@ def solve():
         ) as stream:
             stream.until_done()
 
-        # Clean the concatenated response
         cleaned_response = clean_response(''.join(response_message))
         
         return jsonify({'response': cleaned_response})
@@ -105,3 +127,8 @@ def solve():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+"""
+
+# Save the file
+with open("/mnt/data/flask_app_with_cleaning.py", "w") as file:
+    file.write(file_content)
