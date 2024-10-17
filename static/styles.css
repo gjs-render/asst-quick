@@ -76,7 +76,7 @@ button {
     background-color: #007bff;
     color: white;
     cursor: pointer;
-    align-self: flex-end;
+    align-self: center;
 }
 
 button:hover {
